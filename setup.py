@@ -132,6 +132,7 @@ except ImportError:
 def get_extensions():
     extensions = []
 
+    import numpy
     default_includes=[numpy.get_include()]
     from torch.utils.cpp_extension import include_paths, library_paths
     default_includes += include_paths(cuda=torch.cuda.is_available())
