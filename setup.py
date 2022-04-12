@@ -1,5 +1,6 @@
 import glob
 import os
+import sys
 import platform
 import re
 import warnings
@@ -125,15 +126,18 @@ try:
         raise RuntimeError(
             f'OpenCV >=3 is required but {cv2.__version__} is installed')
 except ImportError:
-    # If first not installed install second package
-    CHOOSE_INSTALL_REQUIRES = [('opencv-python-headless>=3',
-                                'opencv-python>=3')]
-    for main, secondary in CHOOSE_INSTALL_REQUIRES:
-        install_requires.append(choose_requirement(main, secondary))
+    pass
 
 
 def get_extensions():
     extensions = []
+
+    default_includes=[numpy.get_include()]
+    from torch.utils.cpp_extension import include_paths, library_paths
+    default_includes += include_paths(cuda=torch.cuda.is_available())
+    if os.name == 'nt':
+        default_includes.append(os.path.join(os.path.dirname(
+            os.path.dirname(sys.executable)),"include" ))
 
     if os.getenv('MMCV_WITH_TRT', '0') != '0':
 
@@ -155,7 +159,7 @@ def get_extensions():
         from torch.utils.cpp_extension import include_paths, library_paths
         library_dirs = []
         libraries = []
-        include_dirs = []
+        include_dirs = default_includes
         tensorrt_path = os.getenv('TENSORRT_DIR', '0')
         tensorrt_lib_path = glob.glob(
             os.path.join(tensorrt_path, 'targets', '*', 'lib'))[0]
@@ -204,7 +208,7 @@ def get_extensions():
         # new parrots op impl do not use MMCV_USE_PARROTS
         # define_macros = [('MMCV_USE_PARROTS', None)]
         define_macros = []
-        include_dirs = []
+        include_dirs = default_includes
         op_files = glob.glob('./mmcv/ops/csrc/pytorch/cuda/*.cu') +\
             glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') +\
             glob.glob('./mmcv/ops/csrc/parrots/*.cpp')
@@ -264,7 +268,7 @@ def get_extensions():
         if platform.system() != 'Windows':
             extra_compile_args['cxx'] = ['-std=c++14']
 
-        include_dirs = []
+        include_dirs = default_includes
 
         is_rocm_pytorch = False
         try:
@@ -333,7 +337,7 @@ def get_extensions():
         from torch.utils.cpp_extension import include_paths, library_paths
         library_dirs = []
         libraries = []
-        include_dirs = []
+        include_dirs = default_includes
         ort_path = os.getenv('ONNXRUNTIME_DIR', '0')
         library_dirs += [os.path.join(ort_path, 'lib')]
         libraries.append('onnxruntime')

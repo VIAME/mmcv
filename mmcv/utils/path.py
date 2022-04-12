@@ -2,7 +2,7 @@
 import os
 import os.path as osp
 from pathlib import Path
-
+from shutil import copyfile
 from .misc import is_str
 
 
@@ -33,8 +33,10 @@ def mkdir_or_exist(dir_name, mode=0o777):
 def symlink(src, dst, overwrite=True, **kwargs):
     if os.path.lexists(dst) and overwrite:
         os.remove(dst)
-    os.symlink(src, dst, **kwargs)
-
+    if os.name == 'nt':
+        copyfile(src, dst, **kwargs)
+    else:
+        os.symlink(src, dst, **kwargs)
 
 def scandir(dir_path, suffix=None, recursive=False, case_sensitive=True):
     """Scan a directory to find the interested files.
