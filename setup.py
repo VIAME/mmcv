@@ -279,6 +279,9 @@ def get_extensions():
         except ImportError:
             pass
 
+        if os.getenv('FORCE_NO_ROCM', '0') == '1':
+            is_rocm_pytorch = False
+
         if is_rocm_pytorch or torch.cuda.is_available() or os.getenv(
                 'FORCE_CUDA', '0') == '1':
             if is_rocm_pytorch:
