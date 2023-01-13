@@ -13,6 +13,10 @@ try:
     if torch.__version__ == 'parrots':
         from parrots.utils.build_extension import BuildExtension
         EXT_TYPE = 'parrots'
+    elif (hasattr(torch, 'is_mlu_available') and torch.is_mlu_available()) or \
+            os.getenv('FORCE_MLU', '0') == '1':
+        from torch_mlu.utils.cpp_extension import BuildExtension
+        EXT_TYPE = 'pytorch'
     else:
         from torch.utils.cpp_extension import BuildExtension
         EXT_TYPE = 'pytorch'
@@ -36,7 +40,7 @@ def choose_requirement(primary, secondary):
 
 def get_version():
     version_file = 'mmcv/version.py'
-    with open(version_file, 'r', encoding='utf-8') as f:
+    with open(version_file, encoding='utf-8') as f:
         exec(compile(f.read(), version_file, 'exec'))
     return locals()['__version__']
 
@@ -91,12 +95,11 @@ def parse_requirements(fname='requirements/runtime.txt', with_version=True):
             yield info
 
     def parse_require_file(fpath):
-        with open(fpath, 'r') as f:
+        with open(fpath) as f:
             for line in f.readlines():
                 line = line.strip()
                 if line and not line.startswith('#'):
-                    for info in parse_line(line):
-                        yield info
+                    yield from parse_line(line)
 
     def gen_packages_items():
         if exists(require_fpath):
@@ -213,6 +216,7 @@ def get_extensions():
         op_files = glob.glob('./mmcv/ops/csrc/pytorch/cuda/*.cu') +\
             glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') +\
             glob.glob('./mmcv/ops/csrc/parrots/*.cpp')
+        op_files.remove('./mmcv/ops/csrc/pytorch/cuda/iou3d_cuda.cu')
         include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
         include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/cuda'))
         cuda_args = os.getenv('MMCV_CUDA_ARGS')
@@ -285,19 +289,76 @@ def get_extensions():
         if is_rocm_pytorch or torch.cuda.is_available() or os.getenv(
                 'FORCE_CUDA', '0') == '1':
             if is_rocm_pytorch:
-                define_macros += [('HIP_DIFF', None)]
+                define_macros += [('MMCV_WITH_HIP', None)]
             define_macros += [('MMCV_WITH_CUDA', None)]
             cuda_args = os.getenv('MMCV_CUDA_ARGS')
             extra_compile_args['nvcc'] = [cuda_args] if cuda_args else []
+            if is_rocm_pytorch and platform.system() != 'Windows':
+                extra_compile_args['nvcc'] += \
+                    ['--gpu-max-threads-per-block=1024']
             op_files = glob.glob('./mmcv/ops/csrc/pytorch/*.cpp') + \
                 glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') + \
                 glob.glob('./mmcv/ops/csrc/pytorch/cuda/*.cu') + \
                 glob.glob('./mmcv/ops/csrc/pytorch/cuda/*.cpp')
             extension = CUDAExtension
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/pytorch'))
             include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
             include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/cuda'))
+        elif (hasattr(torch, 'is_mlu_available') and
+                torch.is_mlu_available()) or \
+                os.getenv('FORCE_MLU', '0') == '1':
+            from torch_mlu.utils.cpp_extension import MLUExtension
+            define_macros += [('MMCV_WITH_MLU', None)]
+            mlu_args = os.getenv('MMCV_MLU_ARGS')
+            extra_compile_args['cncc'] = [mlu_args] if mlu_args else []
+            op_files = glob.glob('./mmcv/ops/csrc/pytorch/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/pytorch/mlu/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/common/mlu/*.mlu')
+            extension = MLUExtension
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/mlu'))
+        elif (hasattr(torch.backends, 'mps')
+              and torch.backends.mps.is_available()) or os.getenv(
+                  'FORCE_MPS', '0') == '1':
+            # objc compiler support
+            from distutils.unixccompiler import UnixCCompiler
+            if '.mm' not in UnixCCompiler.src_extensions:
+                UnixCCompiler.src_extensions.append('.mm')
+                UnixCCompiler.language_map['.mm'] = 'objc'
+
+            define_macros += [('MMCV_WITH_MPS', None)]
+            extra_compile_args = {}
+            extra_compile_args['cxx'] = ['-Wall', '-std=c++17']
+            extra_compile_args['cxx'] += [
+                '-framework', 'Metal', '-framework', 'Foundation'
+            ]
+            extra_compile_args['cxx'] += ['-ObjC++']
+            # src
+            op_files = glob.glob('./mmcv/ops/csrc/pytorch/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/common/mps/*.mm') + \
+                glob.glob('./mmcv/ops/csrc/pytorch/mps/*.mm')
+            extension = CppExtension
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/mps'))
+        elif (os.getenv('FORCE_NPU', '0') == '1'):
+            print(f'Compiling {ext_name} only with CPU and NPU')
+            try:
+                from torch_npu.utils.cpp_extension import NpuExtension
+                define_macros += [('MMCV_WITH_NPU', None)]
+                extension = NpuExtension
+            except Exception:
+                raise ImportError('can not find any torch_npu')
+            # src
+            op_files = glob.glob('./mmcv/ops/csrc/pytorch/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/common/npu/*.cpp') + \
+                glob.glob('./mmcv/ops/csrc/pytorch/npu/*.cpp')
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
+            include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/npu'))
         else:
-            print(f'Compiling {ext_name} without CUDA')
+            print(f'Compiling {ext_name} only with CPU')
             op_files = glob.glob('./mmcv/ops/csrc/pytorch/*.cpp') + \
                 glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp')
             extension = CppExtension
@@ -396,6 +457,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Utilities',
     ],
     url='https://github.com/open-mmlab/mmcv',

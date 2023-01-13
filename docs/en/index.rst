@@ -31,8 +31,15 @@ You can switch between Chinese and English documents in the lower-left corner of
 
    deployment/mmcv_ops_definition.md
    deployment/onnx.md
+   deployment/onnxruntime_custom_ops.md
    deployment/onnxruntime_op.md
+   deployment/tensorrt_custom_ops.md
    deployment/tensorrt_plugin.md
+
+.. toctree::
+   :caption: Switch Language
+
+   switch_language.md
 
 .. toctree::
    :maxdepth: 2

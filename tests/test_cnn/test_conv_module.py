@@ -23,7 +23,7 @@ class ExampleConv(nn.Module):
                  groups=1,
                  bias=True,
                  norm_cfg=None):
-        super(ExampleConv, self).__init__()
+        super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -208,7 +208,6 @@ def relu_forward(self, x):
 @patch('torch.nn.BatchNorm2d.forward', bn_forward)
 @patch('torch.nn.Conv2d.forward', conv_forward)
 def test_order():
-
     with pytest.raises(AssertionError):
         # order must be a tuple
         order = ['conv', 'norm', 'act']
