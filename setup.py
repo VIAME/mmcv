@@ -138,7 +138,8 @@ def get_extensions():
     import numpy
     default_includes=[numpy.get_include()]
     from torch.utils.cpp_extension import include_paths, library_paths
-    default_includes += include_paths(cuda=torch.cuda.is_available())
+    device_opt = 'cuda' if torch.cuda.is_available() else 'cpu'
+    default_includes += include_paths(device_type=device_opt)
     if os.name == 'nt':
         default_includes.append(os.path.join(os.path.dirname(
             os.path.dirname(sys.executable)),"include" ))
@@ -178,7 +179,7 @@ def get_extensions():
         include_dirs.append(include_path)
         include_dirs.append(include_trt_path)
         include_dirs.append(os.path.join(tensorrt_path, 'include'))
-        include_dirs += include_paths(cuda=True)
+        include_dirs += include_paths(device_type='cuda')
 
         op_files = glob.glob('./mmcv/ops/csrc/tensorrt/plugins/*')
         define_macros += [('MMCV_WITH_CUDA', None)]
@@ -188,7 +189,7 @@ def get_extensions():
         # prevent cub/thrust conflict with other python library
         # More context See issues #1454
         extra_compile_args['nvcc'] += ['-Xcompiler=-fno-gnu-unique']
-        library_dirs += library_paths(cuda=True)
+        library_dirs += library_paths(device_type='cuda')
 
         from setuptools import Extension
         ext_ops = Extension(
@@ -420,11 +421,11 @@ def get_extensions():
             cuda_args = os.getenv('MMCV_CUDA_ARGS')
             extra_compile_args['nvcc'] = [cuda_args] if cuda_args else []
             op_files += glob.glob('./mmcv/ops/csrc/onnxruntime/gpu/*')
-            include_dirs += include_paths(cuda=True)
-            library_dirs += library_paths(cuda=True)
+            include_dirs += include_paths(device_type='cuda')
+            library_dirs += library_paths(device_type='cuda')
         else:
-            include_dirs += include_paths(cuda=False)
-            library_dirs += library_paths(cuda=False)
+            include_dirs += include_paths(device_type='cpu')
+            library_dirs += library_paths(device_type='cpu')
 
         from setuptools import Extension
         ext_ops = Extension(
