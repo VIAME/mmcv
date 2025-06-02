@@ -26,7 +26,7 @@ def _interpolate(name, dim, interpolate_mode):
         if scales is None:
             if 'ONNX_BACKEND' in os.environ and os.environ[
                     'ONNX_BACKEND'] == 'TensorRT':
-                input_size = input.type().sizes()
+                input_size = input.scalar_type().sizes()
                 # slice the first two dim
                 input_size = input_size[:2]
                 # convert output_size to int type
@@ -132,13 +132,13 @@ def constant_pad_nd(g, input, padding, value=None):
     mode = 'constant'
     value = sym_help._maybe_get_scalar(value)
     value = sym_help._if_scalar_type_as(g, value, input)
-    pad = _prepare_onnx_paddings(g, input.type().dim(), padding)
+    pad = _prepare_onnx_paddings(g, input.scalar_type().dim(), padding)
     return g.op('Pad', input, pad, value, mode_s=mode)
 
 
 def reflection_pad(g, input, padding):
     mode = 'reflect'
-    paddings = _prepare_onnx_paddings(g, input.type().dim(), padding)
+    paddings = _prepare_onnx_paddings(g, input.scalar_type().dim(), padding)
     return g.op('Pad', input, paddings, mode_s=mode)
 
 
@@ -294,7 +294,7 @@ def one_hot(g, self, num_classes):
 
 @parse_args('v', 'i', 'none')
 def softmax(g, input, dim, dtype=None):
-    input_dim = input.type().dim()
+    input_dim = input.scalar_type().dim()
     if input_dim:
         # TODO: remove this as onnx opset 11 spec allows negative axes
         if dim < 0:
@@ -332,7 +332,7 @@ def _adaptive_pool(name, type, tuple_fn, fn=None):
                 return g.op('GlobalMaxPool', input), None
             raise NotImplementedError(
                 '[Adaptive pool]:input size not accessible')
-        dim = input.type().sizes()[2:]
+        dim = input.scalar_type().sizes()[2:]
         if output_size == [1] * len(output_size) and type == 'MaxPool':
             return g.op('GlobalMaxPool', input), None
 
@@ -375,7 +375,7 @@ def new_full(g,
              pin_memory=False):
     from torch.onnx.symbolic_opset9 import full
     if dtype is None and self.isCompleteTensor():
-        dtype = self.type().scalarType()
+        dtype = self.scalar_type().scalarType()
         dtype = sym_help.scalar_type_to_onnx.index(
             sym_help.cast_pytorch_to_onnx[dtype])
     return full(g, size, fill_value, dtype, layout, device, pin_memory)

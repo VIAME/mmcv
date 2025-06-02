@@ -60,7 +60,7 @@ class DataContainer:
     @property
     def datatype(self):
         if isinstance(self.data, torch.Tensor):
-            return self.data.type()
+            return self.data.scalar_type()
         else:
             return type(self.data)
 

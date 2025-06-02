@@ -32,7 +32,7 @@ Tensor ms_deform_attn_forward(const Tensor &value, const Tensor &spatial_shapes,
                               const Tensor &sampling_loc,
                               const Tensor &attn_weight,
                               const int im2col_step) {
-  if (value.type().is_cuda()) {
+  if (value.scalar_type().is_cuda()) {
 #ifdef MMCV_WITH_CUDA
     CHECK_CUDA_INPUT(value)
     CHECK_CUDA_INPUT(spatial_shapes)
@@ -55,7 +55,7 @@ void ms_deform_attn_backward(const Tensor &value, const Tensor &spatial_shapes,
                              const Tensor &grad_output, Tensor &grad_value,
                              Tensor &grad_sampling_loc,
                              Tensor &grad_attn_weight, const int im2col_step) {
-  if (value.type().is_cuda()) {
+  if (value.scalar_type().is_cuda()) {
 #ifdef MMCV_WITH_CUDA
     CHECK_CUDA_INPUT(value)
     CHECK_CUDA_INPUT(spatial_shapes)

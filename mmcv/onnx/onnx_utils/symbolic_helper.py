@@ -134,7 +134,7 @@ def _if_scalar_type_as(g, self, tensor):
     if isinstance(self, torch._C.Value):
         return self
 
-    scalar_type = tensor.type().scalarType()
+    scalar_type = tensor.scalar_type().scalarType()
     if scalar_type:
         ty = scalar_type.lower()
         return getattr(self, ty)()
@@ -151,7 +151,7 @@ def _is_value(x):
 
 
 def _is_tensor_list(x):
-    return x.type().isSubtypeOf(ListType.ofTensors())
+    return x.scalar_type().isSubtypeOf(ListType.ofTensors())
 
 
 def _unimplemented(op, msg):
@@ -162,7 +162,7 @@ def _unimplemented(op, msg):
 def _try_get_scalar_type(*args):
     for arg in args:
         try:
-            return arg.type().scalarType()
+            return arg.scalar_type().scalarType()
         except RuntimeError:
             pass
     return None
@@ -218,7 +218,7 @@ def _interpolate_size_to_scales(g, input, output_size, dim):
     else:
         scales_constant = [
             1. if i < 2 else float(output_size[-(dim - i)]) /
-            float(input.type().sizes()[-(dim - i)]) for i in range(0, dim)
+            float(input.scalar_type().sizes()[-(dim - i)]) for i in range(0, dim)
         ]
         scales = g.op(
             'Constant',
@@ -233,9 +233,9 @@ def _interpolate_get_scales_if_available(g, scales):
     # scales[0] is TensorType with sizes = [] in Pytorch == 1.6.0
     # scales[0] is ListType in Pytorch == 1.7.0
     # scales[0] is TensorType with sizes = [2] in Pytorch == 1.8.0
-    scale_desc = 'fs' if scales[0].type().kind() == 'ListType' or (
-        scales[0].type().kind() == 'TensorType' and
-        (sum(scales[0].type().sizes()) > 1)) else 'f'
+    scale_desc = 'fs' if scales[0].scalar_type().kind() == 'ListType' or (
+        scales[0].scalar_type().kind() == 'TensorType' and
+        (sum(scales[0].scalar_type().sizes()) > 1)) else 'f'
     available_scales = _maybe_get_const(
         scales[0], scale_desc) != -1 and not _is_none(scales[0])
 
@@ -276,7 +276,7 @@ def _get_interpolate_attributes(g, mode, args):
 
 def _interpolate_get_scales(g, scale_factor, dim):
     offsets = g.op('Constant', value_t=torch.ones(2, dtype=torch.float32))
-    if isinstance(scale_factor.type(), torch._C.ListType):
+    if isinstance(scale_factor.scalar_type(), torch._C.ListType):
         return g.op('Concat', offsets, scale_factor, axis_i=0)
     else:
         scale_factor = _unsqueeze_helper(g, scale_factor, 0)

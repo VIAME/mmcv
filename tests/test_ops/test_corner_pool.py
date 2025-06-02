@@ -30,7 +30,7 @@ def test_corner_pool_device_and_dtypes_cpu():
                                   [0, 0, 0, 0, 0]]]])
     pool = CornerPool('left')
     left_tensor = pool(lr_tensor)
-    assert left_tensor.type() == lr_tensor.type()
+    assert left_tensor.scalar_type() == lr_tensor.scalar_type()
     assert torch.equal(left_tensor, left_answer)
     # Right Pool
     right_answer = torch.tensor([[[[0, 0, 0, 0, 0], [2, 2, 3, 3, 3],
@@ -38,7 +38,7 @@ def test_corner_pool_device_and_dtypes_cpu():
                                    [0, 0, 0, 0, 0]]]])
     pool = CornerPool('right')
     right_tensor = pool(lr_tensor)
-    assert right_tensor.type() == lr_tensor.type()
+    assert right_tensor.scalar_type() == lr_tensor.scalar_type()
     assert torch.equal(right_tensor, right_answer)
     # Top Pool
     top_answer = torch.tensor([[[[0, 3, 4, 0, 0], [0, 3, 4, 0, 0],
@@ -46,7 +46,7 @@ def test_corner_pool_device_and_dtypes_cpu():
                                  [0, 0, 2, 0, 0]]]])
     pool = CornerPool('top')
     top_tensor = pool(tb_tensor)
-    assert top_tensor.type() == tb_tensor.type()
+    assert top_tensor.scalar_type() == tb_tensor.scalar_type()
     assert torch.equal(top_tensor, top_answer)
     # Bottom Pool
     bottom_answer = torch.tensor([[[[0, 3, 1, 0, 0], [0, 3, 1, 0, 0],
@@ -54,5 +54,5 @@ def test_corner_pool_device_and_dtypes_cpu():
                                     [0, 3, 4, 0, 0]]]])
     pool = CornerPool('bottom')
     bottom_tensor = pool(tb_tensor)
-    assert bottom_tensor.type() == tb_tensor.type()
+    assert bottom_tensor.scalar_type() == tb_tensor.scalar_type()
     assert torch.equal(bottom_tensor, bottom_answer)

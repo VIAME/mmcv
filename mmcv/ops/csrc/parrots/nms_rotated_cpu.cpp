@@ -11,9 +11,9 @@ Tensor nms_rotated_cpu_kernel(const Tensor dets, const Tensor scores,
   // however, the code in this function is much shorter because
   // we delegate the IoU computation for rotated boxes to
   // the single_box_iou_rotated function in box_iou_rotated_utils.h
-  AT_ASSERTM(!dets.type().is_cuda(), "dets must be a CPU tensor");
-  AT_ASSERTM(!scores.type().is_cuda(), "scores must be a CPU tensor");
-  AT_ASSERTM(dets.type() == scores.type(),
+  AT_ASSERTM(!dets.scalar_type().is_cuda(), "dets must be a CPU tensor");
+  AT_ASSERTM(!scores.scalar_type().is_cuda(), "scores must be a CPU tensor");
+  AT_ASSERTM(dets.scalar_type() == scores.scalar_type(),
              "dets should have the same type as scores");
 
   if (dets.numel() == 0) {
@@ -59,7 +59,7 @@ Tensor nms_rotated_cpu_kernel(const Tensor dets, const Tensor scores,
 Tensor nms_rotated_cpu(const Tensor dets, const Tensor scores,
                        const float iou_threshold) {
   auto result = at::empty({0}, dets.options());
-  AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms_rotated", [&] {
+  AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms_rotated", [&] {
     result = nms_rotated_cpu_kernel<scalar_t>(dets, scores, iou_threshold);
   });
   return result;
