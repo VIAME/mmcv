@@ -146,7 +146,7 @@ def get_extensions():
         libraries += ['nvinfer', 'nvparsers', 'nvinfer_plugin']
         libraries += ['cudart']
         define_macros = []
-        extra_compile_args = {'cxx': []}
+        extra_compile_args = {'cxx': ['-std=c++17']}
 
         include_path = os.path.abspath('./mmcv/ops/csrc/common/cuda')
         include_trt_path = os.path.abspath('./mmcv/ops/csrc/tensorrt')
@@ -158,7 +158,7 @@ def get_extensions():
         op_files = glob.glob('./mmcv/ops/csrc/tensorrt/plugins/*')
         define_macros += [('MMCV_WITH_CUDA', None)]
         define_macros += [('MMCV_WITH_TRT', None)]
-        cuda_args = os.getenv('MMCV_CUDA_ARGS')
+        cuda_args = '-std=c++17'
         extra_compile_args['nvcc'] = [cuda_args] if cuda_args else []
         library_dirs += library_paths(cuda=True)
 
@@ -188,10 +188,10 @@ def get_extensions():
             glob.glob('./mmcv/ops/csrc/parrots/*.cpp')
         include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
         include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/cuda'))
-        cuda_args = os.getenv('MMCV_CUDA_ARGS')
+        cuda_args = '-std=c++17'
         extra_compile_args = {
             'nvcc': [cuda_args] if cuda_args else [],
-            'cxx': [],
+            'cxx': ['-std=c++17'],
         }
         if torch.cuda.is_available() or os.getenv('FORCE_CUDA', '0') == '1':
             define_macros += [('MMCV_WITH_CUDA', None)]
@@ -223,7 +223,7 @@ def get_extensions():
 
         os.environ.setdefault('MAX_JOBS', str(cpu_use))
         define_macros = []
-        extra_compile_args = {'cxx': ['-std=c++14']}
+        extra_compile_args = {'cxx': ['-std=c++17']}
         include_dirs = []
 
         is_rocm_pytorch = False
@@ -247,7 +247,7 @@ def get_extensions():
             )
             define_macros += [('MMCV_WITH_CUDA', None)]
             define_macros += [('HIP_DIFF', None)]
-            cuda_args = os.getenv('MMCV_CUDA_ARGS')
+            cuda_args = '-std=c++17'
             extra_compile_args['nvcc'] = [cuda_args] if cuda_args else []
             op_files = glob.glob('./mmcv/ops/csrc/pytorch/hip/*') \
                 + glob.glob('./mmcv/ops/csrc/pytorch/cpu/hip/*')
@@ -255,7 +255,7 @@ def get_extensions():
             include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common/hip'))
         elif torch.cuda.is_available() or os.getenv('FORCE_CUDA', '0') == '1':
             define_macros += [('MMCV_WITH_CUDA', None)]
-            cuda_args = os.getenv('MMCV_CUDA_ARGS')
+            cuda_args = '-std=c++17'
             extra_compile_args['nvcc'] = [cuda_args] if cuda_args else []
             op_files = glob.glob('./mmcv/ops/csrc/pytorch/*.cpp') + \
                 glob.glob('./mmcv/ops/csrc/pytorch/cpu/*.cpp') + \
@@ -293,7 +293,7 @@ def get_extensions():
         library_dirs += [os.path.join(ort_path, 'lib')]
         libraries.append('onnxruntime')
         define_macros = []
-        extra_compile_args = {'cxx': []}
+        extra_compile_args = {'cxx': ['-std=c++17']}
 
         include_path = os.path.abspath('./mmcv/ops/csrc/onnxruntime')
         include_dirs.append(include_path)
@@ -303,7 +303,7 @@ def get_extensions():
         if onnxruntime.get_device() == 'GPU' or os.getenv('FORCE_CUDA',
                                                           '0') == '1':
             define_macros += [('MMCV_WITH_CUDA', None)]
-            cuda_args = os.getenv('MMCV_CUDA_ARGS')
+            cuda_args = '-std=c++17'
             extra_compile_args['nvcc'] = [cuda_args] if cuda_args else []
             op_files += glob.glob('./mmcv/ops/csrc/onnxruntime/gpu/*')
             include_dirs += include_paths(cuda=True)
