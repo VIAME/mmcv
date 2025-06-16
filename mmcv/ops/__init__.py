@@ -25,7 +25,7 @@ from .gather_points import gather_points
 from .group_points import GroupAll, QueryAndGroup, grouping_operation
 from .info import (get_compiler_version, get_compiling_cuda_version,
                    get_onnxruntime_op_path)
-from .iou3d import boxes_iou_bev, nms_bev, nms_normal_bev
+#from .iou3d import boxes_iou_bev, nms_bev, nms_normal_bev
 from .knn import knn
 from .masked_conv import MaskedConv2d, masked_conv2d
 from .modulated_deform_conv import (ModulatedDeformConv2d,
