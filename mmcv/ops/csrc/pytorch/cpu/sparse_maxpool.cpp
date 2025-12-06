@@ -76,7 +76,16 @@ struct SparseMaxPoolBackwardFunctor<tv::CPU, scalar_t, Index> {
 
 DECLARE_CPU_SPECS(float);
 DECLARE_CPU_SPECS(double);
+
+// Workaround for MSVC internal compiler error C1001 with at::Half
+// Disable optimizations for this specific template instantiation
+#ifdef _MSC_VER
+#pragma optimize("", off)
+#endif
 DECLARE_CPU_SPECS(at::Half);
+#ifdef _MSC_VER
+#pragma optimize("", on)
+#endif
 
 #undef DECLARE_CPU_SPECS
 #undef DECLARE_CPU_SPECS_T_INDEX
