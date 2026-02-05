@@ -1589,6 +1589,11 @@ void points_in_polygons_forward_impl(const Tensor points, const Tensor polygons,
 REGISTER_DEVICE_IMPL(points_in_polygons_forward_impl, CUDA,
                      points_in_polygons_forward_cuda);
 
+
+#ifndef _WIN32
+// VIAME: Sparse convolution operations - excluded on Windows due to MSVC issues
+// with tensorview.h templates. The kernel implementations in sparse_*.cu files
+// are not compiled on Windows (see setup.py patch).
 torch::Tensor IndiceMaxpoolForwardCUDAKernelLauncher(torch::Tensor features,
                                                      torch::Tensor indicePairs,
                                                      torch::Tensor indiceNum,
@@ -1699,6 +1704,8 @@ torch::Tensor fused_indice_conv_batchnorm_forward_impl(
 
 REGISTER_DEVICE_IMPL(fused_indice_conv_batchnorm_forward_impl, CUDA,
                      fused_indice_conv_batchnorm_forward_cuda)
+
+#endif // !_WIN32
 
 void MinAreaPolygonsCUDAKernelLauncher(const Tensor pointsets, Tensor polygons);
 

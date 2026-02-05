@@ -365,6 +365,25 @@ def get_extensions():
             extension = CppExtension
             include_dirs.append(os.path.abspath('./mmcv/ops/csrc/common'))
 
+        # VIAME patch: Exclude sparse convolution operations on Windows due to
+        # MSVC internal compiler errors with complex variadic templates in
+        # tensorview.h. These sparse ops use spconv's tensorview which triggers
+        # ICE in MSVC when compiling template-heavy code.
+        # Must also exclude files that depend on these templates:
+        # - fused_spconv_ops uses sparse_reordering functors
+        # - spconv_ops uses sparse_indice functors
+        # - sparse_pool_ops uses sparse_maxpool functors
+        if platform.system() == 'Windows':
+            sparse_patterns = [
+                'sparse_maxpool', 'sparse_indice', 'sparse_reordering',
+                'fused_spconv_ops', 'spconv_ops', 'sparse_pool_ops'
+            ]
+            original_count = len(op_files)
+            op_files = [f for f in op_files if not any(p in f for p in sparse_patterns)]
+            excluded_count = original_count - len(op_files)
+            if excluded_count > 0:
+                print(f'VIAME: Excluded {excluded_count} sparse ops on Windows (MSVC ICE workaround)')
+
         # Since the PR (https://github.com/open-mmlab/mmcv/pull/1463) uses
         # c++14 features, the argument ['std=c++14'] must be added here.
         # However, in the windows environment, some standard libraries

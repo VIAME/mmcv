@@ -268,6 +268,9 @@ void prroi_pool_coor_backward(Tensor output, Tensor grad_output, Tensor input,
                               Tensor rois, Tensor grad_rois, int pooled_height,
                               int pooled_width, float spatial_scale);
 
+
+#ifndef _WIN32
+// Sparse convolution operations - excluded on Windows due to MSVC issues
 template <unsigned NDim>
 std::vector<torch::Tensor> get_indice_pairs_forward(
     torch::Tensor indices, int64_t batchSize,
@@ -304,6 +307,7 @@ Tensor indice_maxpool_forward(Tensor features, Tensor indicePairs,
 Tensor indice_maxpool_backward(Tensor features, Tensor outFeatures,
                                Tensor outGrad, Tensor indicePairs,
                                Tensor indiceNum);
+#endif // \!_WIN32
 
 void box_iou_rotated(const Tensor boxes1, const Tensor boxes2, Tensor ious,
                      const int mode_flag, const bool aligned);
@@ -681,6 +685,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         "sync_bn backward_data", py::arg("grad_output"), py::arg("weight"),
         py::arg("grad_weight"), py::arg("grad_bias"), py::arg("norm"),
         py::arg("std"), py::arg("grad_input"));
+#ifndef _WIN32
+  // Sparse convolution bindings - excluded on Windows due to MSVC issues
   m.def("get_indice_pairs_2d_forward", &get_indice_pairs_forward<2>,
         "get_indice_pairs_2d_forward", py::arg("indices"), py::arg("batchSize"),
         py::arg("outSpatialShape"), py::arg("spatialShape"),
@@ -729,6 +735,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("indice_maxpool_backward", &indice_maxpool_backward,
         "indice_maxpool_backward", py::arg("features"), py::arg("outFeatures"),
         py::arg("outGrad"), py::arg("indicePairs"), py::arg("indiceNum"));
+#endif // \!_WIN32
   m.def("psamask_forward", &psamask_forward, "PSAMASK forward (CPU/CUDA)",
         py::arg("input"), py::arg("output"), py::arg("psa_type"),
         py::arg("num_"), py::arg("h_feature"), py::arg("w_feature"),
